@@ -79,7 +79,7 @@ def main():
     plt.xlabel("Rating")
     plt.ylabel("Frequency")
     plt.gca().grid(axis="y", linestyle="--")
-    plt.savefig("distribution_of_most_commonly_rated_movie_ratings.png", dpi=200)
+    plt.savefig("distribution_of_top-" + str(n) + "_most_commonly_rated_movie_ratings.png", dpi=200)
 
     # Flush the plot
     plt.cla()
@@ -129,7 +129,7 @@ def main():
     plt.xlabel("Rating")
     plt.ylabel("Frequency")
     plt.gca().grid(axis="y", linestyle="--")
-    plt.savefig("distribution_of_highest_rated_movie_ratings.png", dpi=200)
+    plt.savefig("distribution_of_top-" + str(n) + "_highest_rated_movie_ratings.png", dpi=200)
 
     # Flush the plot
     plt.cla()
