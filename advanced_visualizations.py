@@ -1,6 +1,6 @@
 """
 Filename:     advanced_visualizations.py
-Version:      0.1
+Version:      0.11
 Date:         2018/2/21
 
 Description:  Performs operations to generate advanced visualizations for
@@ -20,76 +20,69 @@ import numpy as np
 import surprise
 import scipy
 
+"""
+INITIAL COMMIT: Just getting familiar with the surprise package and making
+sure we can actually use its functions to perform the algorithms we want
+on the data!
 
-def main():
+"""
 
-    """
-    INITIAL COMMIT: Just getting familiar with the surprise package and making
-    sure we can actually use its functions to perform the algorithms we want
-    on the data!
+""" First, load the data """
 
-    """
+# Load the movie data
+movies = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
 
-    """ First, load the data """
+# Load the rating data
+ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+""" Then, convert the data to a dataframe so it can be read by surprise """
+
+# Stores the ratings in a pandas-readable dictionary
+ratings_dict = {'userID'  : [],
+                'movieID' : [],
+                'rating'  : []}
+
+# Populate the dictionary
+for rating in ratings:
+    ratings_dict['userID'].append(rating[0])
+    ratings_dict['movieID'].append(rating[1])
+    ratings_dict['rating'].append(rating[2])
+
+# Load the dictionary into a dataframe
+df = pd.DataFrame(ratings_dict)
     
-    # Load the movie data
-    movies = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+# Declare a reader with the appropriate rating scale
+reader = surprise.Reader(rating_scale=(1, 5))
 
-    # Load the rating data
-    ratings = np.loadtxt("data\\data.txt", dtype="int")
+# Load the dataframe into a surprise-readable data structure
+data = surprise.Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
 
-    """ Then, convert the data to a dataframe so it can be read by surprise """
+""" Finally, let's run an SVD algorithm on the data """
 
-    # Stores the ratings in a pandas-readable dictionary
-    ratings_dict = {'userID'  : [],
-                    'movieID' : [],
-                    'rating'  : []}
+# Split the data into a training set and test set
+train_set, test_set = surprise.model_selection.train_test_split(data, test_size=0.25)
 
-    # Populate the dictionary
-    for rating in ratings:
-        ratings_dict['userID'].append(rating[0])
-        ratings_dict['movieID'].append(rating[1])
-        ratings_dict['rating'].append(rating[2])
+# Set the number of factors
+k = 20
 
-    # Load the dictionary into a dataframe
-    df = pd.DataFrame(ratings_dict)
-        
-    # Declare a reader with the appropriate rating scale
-    reader = surprise.Reader(rating_scale=(1, 5))
+# Declare the model
+model = surprise.SVD(n_factors=k, biased=False)
 
-    # Load the dataframe into a surprise-readable data structure
-    data = surprise.Dataset.load_from_df(df[['userID', 'movieID', 'rating']], reader)
+# Train the model on the data
+model.fit(train_set)
+predictions = model.test(test_set)
 
-    """ Finally, let's run a SVD algorithm on the data """
+# Print the accuracy of the predictions
+print("Unbiased-SVD Test RMSE: " + str(surprise.accuracy.rmse(predictions, verbose=False)))
 
-    # Split the data into a training set and test set
-    train_set, test_set = surprise.model_selection.train_test_split(data, test_size=0.25)
+""" Now let's run an SVD algorithm with bias terms on the data """
 
-    # Set the number of factors
-    k = 20
-    
-    # Declare the model
-    model = surprise.SVD(n_factors=k, biased=False)
+# Declare the model
+model = surprise.SVD(n_factors=k, biased=True)
 
-    # Train the model on the data
-    model.fit(train_set)
-    predictions = model.test(test_set)
-    
-    # Print the accuracy of the predictions
-    print("Unbiased-SVD Test RMSE: " + str(surprise.accuracy.rmse(predictions, verbose=False)))
+# Train the model on the data
+model.fit(train_set)
+predictions = model.test(test_set)
 
-    """ Now let's run an SVD algorithm with bias terms on the data """
-
-    # Declare the model
-    model = surprise.SVD(n_factors=k, biased=True)
-
-    # Train the model on the data
-    model.fit(train_set)
-    predictions = model.test(test_set)
-    
-    # Print the accuracy of the predictions
-    print("Biased-SVD Test RMSE: " + str(surprise.accuracy.rmse(predictions, verbose=False)))
-
-
-if __name__ == "__main__":
-    main()
+# Print the accuracy of the predictions
+print("Biased-SVD Test RMSE: " + str(surprise.accuracy.rmse(predictions, verbose=False)))
