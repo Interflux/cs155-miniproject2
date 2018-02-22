@@ -113,7 +113,7 @@ def main():
     average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
     
     # Identify the n best-rated movies
-    best_rated_movies = average_ratings[:10, 0]
+    best_rated_movies = average_ratings[:n, 0]
 
     # Extract their ratings
     best_ratings = np.asarray([x for x in ratings if x[1] in best_rated_movies])
