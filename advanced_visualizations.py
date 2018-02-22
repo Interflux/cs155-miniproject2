@@ -1,6 +1,6 @@
 """
 Filename:     advanced_visualizations.py
-Version:      0.2
+Version:      0.21
 Date:         2018/2/21
 
 Description:  Tests operations to generate advanced visualizations for
@@ -22,7 +22,7 @@ import scipy.linalg
 import surprise
 
 
-def svd_surprise(k=20, bias=True, test_fraction=0.25):
+def svd_surprise(k=20, bias=True, test_fraction=0.0):
     """
     Performs SVD on the ratings data using surprise.
 
@@ -31,8 +31,12 @@ def svd_surprise(k=20, bias=True, test_fraction=0.25):
     reader = surprise.Reader(rating_scale=(1, 5), sep='\t')
     data = surprise.Dataset.load_from_file('data/data.txt', reader)
 
-    # Split the data into a training set and test set
-    train_set, test_set = surprise.model_selection.train_test_split(data, test_size=test_fraction)
+    if test_fraction == 0.0:
+        _, test_set = surprise.model_selection.train_test_split(data, test_size=0.25)
+        train_set = data.build_full_trainset()
+    else:
+        # Split the data into a training set and test set
+        train_set, test_set = surprise.model_selection.train_test_split(data, test_size=test_fraction)
 
     # Declare the model
     model = surprise.SVD(n_factors=k, biased=bias)
@@ -155,21 +159,22 @@ df = pd.DataFrame(ratings_dict)
 
 """
 
+""" If we want to perform SVD using TensorFlow...
+
 # Perform SVD using Hamed's TensorFlow implementation
 U, V = svd_hamed(k=20)
 
 # Transpose U
 U = np.matrix.transpose(U)
 
-""" 
+"""
+
 # Perform SVD using surprise
-U, V, a, b = svd_surprise(k=20, bias=true)
+U, V, a, b = svd_surprise(k=20, bias=True)
 
 # Transpose U and V
 U = np.matrix.transpose(U)
 V = np.matrix.transpose(V)
-
-"""
 
 ### Project U and V onto 2 dimensions ###
 
