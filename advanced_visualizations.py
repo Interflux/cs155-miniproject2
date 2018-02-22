@@ -1,6 +1,6 @@
 """
 Filename:     advanced_visualizations.py
-Version:      0.21
+Version:      0.30
 Date:         2018/2/21
 
 Description:  Tests operations to generate advanced visualizations for
@@ -10,6 +10,9 @@ Author(s):     Dennis Lam
 Organization:  California Institute of Technology
 
 """
+
+# Import package components
+from collections import Counter
 
 # Import packages as aliases
 import matplotlib.pyplot as plt
@@ -191,6 +194,73 @@ U_proj = np.matmul(A_proj_trans, U)
 
 ### Visualize our results ###
 
-# Make a crude plot of V_proj
-plt.plot(V_proj[0], V_proj[1], 'ro')
+# Load the movie data
+movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+
+# Load the movie ratings
+ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+##################################################
+#                                                #
+# 2. All ratings of the ten most popular movies. #
+#                                                #
+##################################################
+    
+# Set n for the n most-commonly-rated movies to examine
+n = 10
+    
+# Identify the n movies with the greatest number of ratings
+most_common_movies = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
+
+# Make a crude plot of the movies
+
+x_list = []
+y_list = []
+
+for movie_id in most_common_movies:
+    x_list.append(V_proj[0][movie_id - 1])
+    y_list.append(V_proj[1][movie_id - 1])
+
+plt.plot(x_list, y_list, 'ro')
+plt.show()
+
+##########################################
+#                                        #
+# 3. All ratings of the ten best movies. #
+#                                        #
+##########################################
+
+# Set n for the n best-rated movies to examine
+n = 10
+
+# For each movie, count the number of ratings and add up their values
+total_ratings = {}
+for rating in ratings:
+    if rating[1] in total_ratings:
+        total_ratings[rating[1]][0] += rating[2]
+        total_ratings[rating[1]][1] += 1
+    else:
+        total_ratings[rating[1]] = [rating[2], 1]
+        
+# Compute the average rating for each movie
+average_ratings = []
+for movie_id, rating_data in total_ratings.items():
+    average_ratings.append([movie_id, rating_data[0] / rating_data[1]])
+    
+# Sort the movies by average rating
+average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
+
+# Identify the n best-rated movies
+best_rated_movies = np.asarray(average_ratings[:n, 0], dtype="int")
+
+# Make a crude plot of the movies
+
+x_list = []
+y_list = []
+
+for movie_id in best_rated_movies:
+    x_list.append(V_proj[0][movie_id - 1])
+    y_list.append(V_proj[1][movie_id - 1])
+
+plt.plot(x_list, y_list, 'ro')
 plt.show()
