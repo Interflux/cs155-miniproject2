@@ -27,7 +27,7 @@ import surprise
 
 def svd_sgd(k=20, reg=0.0, eta=0.03, eps=0.0001, max_epochs=300, bias=False):
     """
-    Performs SVD on the ratings data SGD. Adapted from Homework 5 solutions.
+    Performs SVD on the ratings data using SGD. Adapted from Homework 5 solutions.
 
     """
     Y_train = np.loadtxt('data/train.txt').astype(int)
