@@ -1,12 +1,11 @@
 """
 Filename:     advanced_visualizations.py
-Version:      0.30
-Date:         2018/2/21
+Version:      1.0
+Date:         2018/2/23
 
-Description:  Tests operations to generate advanced visualizations for
-              CS 155's second miniproject.
+Description:  Generates advanced visualizations for CS 155's second miniproject.
 
-Author(s):     Dennis Lam
+Author(s):     Garret Sullivan, Dennis Lam
 Organization:  California Institute of Technology
 
 """
@@ -23,6 +22,9 @@ import numpy as np
 # Import packages
 import scipy.linalg
 import surprise
+import operator
+import random
+import os
 
 
 def svd_sgd(k=20, reg=0.0, eta=0.03, eps=0.0001, max_epochs=300, bias=False):
@@ -231,140 +233,369 @@ def print_ratings_dataframe(df):
         print(df)
 
 
-""" If we're loading the data ourselves...
+def make_plots(V_proj, output_dir):
+    """
+    Generates a full suite of advanced visualizations from the given matrix.
 
-# Load the movie data
-movies = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+    """
+    # Load the movie data
+    movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
 
-# Load the rating data
-ratings = np.loadtxt("data\\data.txt", dtype="int")
+    # Load the movie ratings
+    ratings = np.loadtxt("data\\data.txt", dtype="int")
 
-# Stores the ratings in a pandas-readable dictionary
-ratings_dict = {'userID'  : [],
-                'movieID' : [],
-                'rating'  : []}
-
-# Populate the dictionary
-for rating in ratings:
-    ratings_dict['userID'].append(rating[0])
-    ratings_dict['movieID'].append(rating[1])
-    ratings_dict['rating'].append(rating[2])
-
-# Load the dictionary into a dataframe
-df = pd.DataFrame(ratings_dict)
-
-"""
-
-""" If we want to perform SVD using TensorFlow...
-
-# Perform SVD using Hamed's TensorFlow implementation
-U, V = svd_hamed(k=20)
-
-# Transpose U
-U = np.matrix.transpose(U)
-
-"""
-
-""" If we want to perform SVD using surprise...
-
-# Perform SVD using surprise
-U, V, a, b = svd_surprise(k=20, bias=True)
-
-# Transpose U and V
-U = np.matrix.transpose(U)
-V = np.matrix.transpose(V)
-
-"""
-
-# Perform SVD using SGD
-U, V = svd_sgd(k=20, reg=10**-1, bias=True)
-
-# Transpose U
-U = np.matrix.transpose(U)
-
-
-### Project U and V onto 2 dimensions ###
-
-# Run SVD on V, decomposing it into AS(B^T) where S is a diagonal matrix
-A, S, B = scipy.linalg.svd(V)
-
-# Save the first two columns of A
-A_proj = A[:, 0:2]
-
-# Project every movie and user using A_proj
-A_proj_trans = np.matrix.transpose(A_proj)
-V_proj = np.matmul(A_proj_trans, V)
-U_proj = np.matmul(A_proj_trans, U)
-
-### Visualize our results ###
-
-# Load the movie data
-movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
-
-# Load the movie ratings
-ratings = np.loadtxt("data\\data.txt", dtype="int")
-
-##################################################
-#                                                #
-# 2. All ratings of the ten most popular movies. #
-#                                                #
-##################################################
-    
-# Set n for the n most-commonly-rated movies to examine
-n = 10
-    
-# Identify the n movies with the greatest number of ratings
-most_common_movies = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
-
-# Make a crude plot of the movies
-
-x_list = []
-y_list = []
-
-for movie_id in most_common_movies:
-    x_list.append(V_proj[0][movie_id - 1])
-    y_list.append(V_proj[1][movie_id - 1])
-
-plt.plot(x_list, y_list, 'ro')
-plt.show()
-
-##########################################
-#                                        #
-# 3. All ratings of the ten best movies. #
-#                                        #
-##########################################
-
-# Set n for the n best-rated movies to examine
-n = 10
-
-# For each movie, count the number of ratings and add up their values
-total_ratings = {}
-for rating in ratings:
-    if rating[1] in total_ratings:
-        total_ratings[rating[1]][0] += rating[2]
-        total_ratings[rating[1]][1] += 1
-    else:
-        total_ratings[rating[1]] = [rating[2], 1]
+    # Create the output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
         
-# Compute the average rating for each movie
-average_ratings = []
-for movie_id, rating_data in total_ratings.items():
-    average_ratings.append([movie_id, rating_data[0] / rating_data[1]])
-    
-# Sort the movies by average rating
-average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
+    ##################################################
+    #                                                #
+    # 2. All ratings of the ten most popular movies. #
+    #                                                #
+    ##################################################
+        
+    # Set n for the n most-commonly-rated movies to examine
+    n = 10
 
-# Identify the n best-rated movies
-best_rated_movies = np.asarray(average_ratings[:n, 0], dtype="int")
+    # Identify the n movies with the greatest number of ratings
+    id_list = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
 
-# Make a crude plot of the movies
+    # Plot the movies
 
-x_list = []
-y_list = []
+    x_list = []
+    y_list = []
 
-for movie_id in best_rated_movies:
-    x_list.append(V_proj[0][movie_id - 1])
-    y_list.append(V_proj[1][movie_id - 1])
+    for movie_id in id_list:
+        x_list.append(V_proj[0][movie_id - 1])
+        y_list.append(V_proj[1][movie_id - 1])
 
-plt.plot(x_list, y_list, 'ro')
-plt.show()
+    fig, ax = plt.subplots(figsize=(12, 9))
+    ax.scatter(x_list, y_list)
+
+    for i, movie_id in enumerate(id_list):
+        ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
+
+    plt.title("Top-" + str(n) + " Most-Commonly-Rated Movies")
+    plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_commonly_rated_movies.png", dpi=80)
+
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
+
+    ##########################################
+    #                                        #
+    # 3. All ratings of the ten best movies. #
+    #                                        #
+    ##########################################
+
+    # Set n for the n best-rated movies to examine
+    n = 10
+
+    # For each movie, count the number of ratings and add up their values
+    total_ratings = {}
+    for rating in ratings:
+        if rating[1] in total_ratings:
+            total_ratings[rating[1]][0] += rating[2]
+            total_ratings[rating[1]][1] += 1
+        else:
+            total_ratings[rating[1]] = [rating[2], 1]
+            
+    # Compute the average rating for each movie
+    average_ratings = []
+    for movie_id, rating_data in total_ratings.items():
+        average_ratings.append([movie_id, rating_data[0] / rating_data[1]])
+        
+    # Sort the movies by average rating
+    average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
+
+    # Identify the n best-rated movies
+    id_list = np.asarray(average_ratings[:n, 0], dtype="int")
+
+    # Plot the movies
+
+    x_list = []
+    y_list = []
+
+    for movie_id in id_list:
+        x_list.append(V_proj[0][movie_id - 1])
+        y_list.append(V_proj[1][movie_id - 1])
+
+    fig, ax = plt.subplots(figsize=(12, 9))
+    ax.scatter(x_list, y_list)
+
+    for i, movie_id in enumerate(id_list):
+        ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
+
+    plt.title("Top-" + str(n) + " Most-Highly-Rated Movies")
+    plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_highly_rated_movies.png", dpi=80)
+
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
+
+    #####################################################
+    #                                                   #  
+    # All ratings of 10 movies from a particular genre. #
+    #                                                   #
+    #####################################################
+
+    # Set k for the number of genres to visualize
+    k = 19
+
+    # Define the lookup dictionary for the movie genres
+    genre_labels = {2  : "Unknown",
+                    3  : "Action",
+                    4  : "Adventure",
+                    5  : "Animation",
+                    6  : "Childrens",
+                    7  : "Comedy",
+                    8  : "Crime",
+                    9  : "Documentary",
+                    10 : "Drama",
+                    11 : "Fantasy",
+                    12 : "Film-Noir",
+                    13 : "Horror",
+                    14 : "Musical",
+                    15 : "Mystery",
+                    16 : "Romance",
+                    17 : "Sci-Fi",
+                    18 : "Thriller",
+                    19 : "War",
+                    20 : "Western"}
+
+    # Select k genres to visualize
+    genres = random.sample(range(2, 20 + 1), k)
+
+    # Set n for the number of movies in each genre to visualize
+    n = 10
+
+    # For each genre, visualize the ratings for the top-n most-commonly-rated movies in the genre
+    for genre in genres:
+        # Identify all the movies in the genre
+        genre_movies = []
+        for movie in movie_data:
+            if movie[genre] == "1":
+                genre_movies.append(np.uint16(movie[0]))
+
+        # Identify the n movies with the greatest number of ratings
+
+        freq_dict = {}
+
+        for movie_id in genre_movies:
+            freq_dict[movie_id] = 0
+            
+        for rating in ratings:
+            if rating[1] in genre_movies:
+                freq_dict[rating[1]] += 1
+
+        id_list = sorted(freq_dict.items(), key=operator.itemgetter(1), reverse=True)
+        id_list = [x[0] for x in id_list[0:n]]
+        
+        # Plot the movies
+
+        x_list = []
+        y_list = []
+
+        for movie_id in id_list:
+            x_list.append(V_proj[0][movie_id - 1])
+            y_list.append(V_proj[1][movie_id - 1])
+
+        fig, ax = plt.subplots(figsize=(12, 9))
+        ax.scatter(x_list, y_list)
+
+        for i, movie_id in enumerate(id_list):
+            ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
+
+        plt.title("Top-" + str(n) + " Most-Commonly-Rated \'" + genre_labels[genre] + "\' Movies")
+        plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_commonly_rated_" + genre_labels[genre] + "_movies.png", dpi=80)
+
+        # Flush the plot
+        plt.cla()
+        plt.clf()
+        plt.close()
+
+
+def main():
+
+    ##############################
+    #                            #
+    # TRAINING AND VISUALIZATION #
+    #                            #
+    ##############################
+
+    """ If we're loading the data ourselves...
+
+    # Load the movie data
+    movies = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+
+    # Load the rating data
+    ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+    # Stores the ratings in a pandas-readable dictionary
+    ratings_dict = {'userID'  : [],
+                    'movieID' : [],
+                    'rating'  : []}
+
+    # Populate the dictionary
+    for rating in ratings:
+        ratings_dict['userID'].append(rating[0])
+        ratings_dict['movieID'].append(rating[1])
+        ratings_dict['rating'].append(rating[2])
+
+    # Load the dictionary into a dataframe
+    df = pd.DataFrame(ratings_dict)
+
+    """
+
+    ############################################
+    #                                          #
+    # Choose a matrix-factorization algorithm. #
+    #                                          #
+    ############################################
+
+    """ If we want to perform SVD using TensorFlow...
+
+    # Perform SVD using Hamed's TensorFlow implementation
+    U, V = svd_hamed(k=20)
+
+    # Transpose U
+    U = np.matrix.transpose(U)
+
+    """
+
+    """ If we want to perform SVD using our own SGD algorithm...
+
+    # Perform SVD using SGD
+    U, V = svd_sgd(k=20, reg=10**-1, bias=True)
+
+    # Transpose U
+    U = np.matrix.transpose(U)
+
+    """
+
+    """ If we want to perform SVD using surprise...
+
+    # Perform SVD using surprise
+    U, V, a, b = svd_surprise(k=20, bias=True)
+
+    # Transpose U and V
+    U = np.matrix.transpose(U)
+    V = np.matrix.transpose(V)
+
+    """
+
+    #########################################
+    #                                       #
+    # Run a matrix-factorization algorithm. #
+    #                                       #
+    #########################################
+
+    # Perform SVD using surprise
+    U, V, a, b = svd_surprise(k=20, bias=True)
+
+    # Transpose U and V
+    U = np.matrix.transpose(U)
+    V = np.matrix.transpose(V)
+
+    ########################################
+    #                                      #
+    # Project U and V onto two dimensions. #
+    #                                      #
+    ########################################
+
+    # Run SVD on V, decomposing it into AS(B^T) where S is a diagonal matrix
+    A, S, B = scipy.linalg.svd(V)
+
+    # Save the first two columns of A
+    A_proj = A[:, 0:2]
+
+    # Project every movie and user using A_proj
+    A_proj_trans = np.matrix.transpose(A_proj)
+    V_proj = np.matmul(A_proj_trans, V)
+    U_proj = np.matmul(A_proj_trans, U)
+
+    ##########################
+    #                        #
+    # Visualize our results! #
+    #                        #
+    ##########################
+
+    make_plots(V_proj, "svd_surprise")
+
+    #################################
+    #                               #
+    # Repeat for other SGD methods. #
+    #                               #
+    #################################
+
+    """ TensorFlow... """
+
+    # Perform SVD using Hamed's TensorFlow implementation
+    U, V = svd_hamed(k=20)
+
+    # Transpose U
+    U = np.matrix.transpose(U)
+
+    # Run SVD on V, decomposing it into AS(B^T) where S is a diagonal matrix
+    A, S, B = scipy.linalg.svd(V)
+
+    # Save the first two columns of A
+    A_proj = A[:, 0:2]
+
+    # Project every movie and user using A_proj
+    A_proj_trans = np.matrix.transpose(A_proj)
+    V_proj = np.matmul(A_proj_trans, V)
+    U_proj = np.matmul(A_proj_trans, U)
+
+    # Plot the results
+    make_plots(V_proj, "svd_tensorflow")
+
+    """ Our own SGD algorithm... """
+
+    # Perform SVD using SGD
+    U, V = svd_sgd(k=20, reg=10**-1, bias=True)
+
+    # Transpose U
+    U = np.matrix.transpose(U)
+
+    # Run SVD on V, decomposing it into AS(B^T) where S is a diagonal matrix
+    A, S, B = scipy.linalg.svd(V)
+
+    # Save the first two columns of A
+    A_proj = A[:, 0:2]
+
+    # Project every movie and user using A_proj
+    A_proj_trans = np.matrix.transpose(A_proj)
+    V_proj = np.matmul(A_proj_trans, V)
+    U_proj = np.matmul(A_proj_trans, U)
+
+    # Plot the results
+    make_plots(V_proj, "svd_sgd")
+
+    """ Our own SGD algorithm, without bias... """
+
+    # Perform SVD using SGD
+    U, V = svd_sgd(k=20, reg=10**-1, bias=False)
+
+    # Transpose U
+    U = np.matrix.transpose(U)
+
+    # Run SVD on V, decomposing it into AS(B^T) where S is a diagonal matrix
+    A, S, B = scipy.linalg.svd(V)
+
+    # Save the first two columns of A
+    A_proj = A[:, 0:2]
+
+    # Project every movie and user using A_proj
+    A_proj_trans = np.matrix.transpose(A_proj)
+    V_proj = np.matmul(A_proj_trans, V)
+    U_proj = np.matmul(A_proj_trans, U)
+
+    # Plot the results
+    make_plots(V_proj, "svd_sgd_nobias")
+
+
+if __name__ == "__main__":
+    main()

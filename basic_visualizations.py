@@ -1,7 +1,7 @@
 """
 Filename:     basic_visualizations.py
-Version:      1.0
-Date:         2018/2/19
+Version:      1.2
+Date:         2018/2/23
 
 Description:  Generates basic visualizations for CS 155's second miniproject.
 
@@ -22,12 +22,26 @@ import numpy as np
 
 # Import packages
 import random
+import os
 
 
 def main():
 
-    # Load the movie ratings
+    # Load the movie data
+    movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+
+    # Load the ratings data
     ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+    # Set the resolution of each figure
+    fig_res = 200
+
+    # Set the output directory
+    output_dir = "basic"
+
+    # Create the output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     ############################################
     #                                          #
@@ -46,7 +60,7 @@ def main():
     plt.xlabel("Rating")
     plt.ylabel("Frequency")
     plt.gca().grid(axis="y", linestyle="--")
-    plt.savefig("distribution_of_all_movie_ratings.png", dpi=200)
+    plt.savefig(output_dir + "\\distribution_of_all_movie_ratings.png", dpi=fig_res)
 
     # Flush the plot
     plt.cla()
@@ -65,26 +79,32 @@ def main():
     # Identify the n movies with the greatest number of ratings
     most_common_movies = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
 
-    # Extract their ratings
-    most_common_ratings = np.asarray([x for x in ratings if x[1] in most_common_movies])
-    
-    # Count the frequency of each rating
-    most_common_ratings_distribution = np.zeros(5, dtype="int")
-    for rating in most_common_ratings[:, 2]:
-        most_common_ratings_distribution[rating - 1] += 1
-    
-    # Generate a histogram of the most-commonly-rated movies as a bar chart
-    plt.bar(np.arange(1, 5 + 1), most_common_ratings_distribution)
-    plt.title("Distribution of Ratings for the " + str(n) + " Most-Commonly-Rated Movies")
-    plt.xlabel("Rating")
-    plt.ylabel("Frequency")
-    plt.gca().grid(axis="y", linestyle="--")
-    plt.savefig("distribution_of_top-" + str(n) + "_most_commonly_rated_movie_ratings.png", dpi=200)
+    # For each movie...
+    for movie_id in most_common_movies:
 
-    # Flush the plot
-    plt.cla()
-    plt.clf()
-    plt.close()
+        # Get the title
+        movie_title = movie_data[movie_id - 1][1]
+
+        # Extract the ratings
+        movie_ratings = np.asarray([x for x in ratings if x[1] == movie_id])
+        
+        # Count the frequency of each rating
+        ratings_distribution = np.zeros(5, dtype="int")
+        for rating in movie_ratings[:, 2]:
+            ratings_distribution[rating - 1] += 1
+        
+        # Generate a histogram for the current most-commonly-rated movie as a bar chart
+        plt.bar(np.arange(1, 5 + 1), ratings_distribution)
+        plt.title("Ratings for the Top-" + str(n) + " Most-Commonly-Rated Movie:\n" + movie_title)
+        plt.xlabel("Rating")
+        plt.ylabel("Frequency")
+        plt.gca().grid(axis="y", linestyle="--")
+        plt.savefig(output_dir + "\\distribution_for_top-" + str(n) + "_most_commonly_rated_movie_id-" + str(movie_id) + ".png", dpi=fig_res)
+
+        # Flush the plot
+        plt.cla()
+        plt.clf()
+        plt.close()
 
     ##########################################
     #                                        #
@@ -113,28 +133,34 @@ def main():
     average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
     
     # Identify the n best-rated movies
-    best_rated_movies = average_ratings[:n, 0]
+    best_rated_movies = np.asarray(average_ratings[:n, 0], dtype="int")
 
-    # Extract their ratings
-    best_ratings = np.asarray([x for x in ratings if x[1] in best_rated_movies])
-    
-    # Count the frequency of each rating
-    best_ratings_distribution = np.zeros(5, dtype="int")
-    for rating in best_ratings[:, 2]:
-        best_ratings_distribution[rating - 1] += 1
-    
-    # Generate a histogram of the best-rated movies as a bar chart
-    plt.bar(np.arange(1, 5 + 1), best_ratings_distribution)
-    plt.title("Distribution of Ratings for the " + str(n) + " Best-Rated Movies")
-    plt.xlabel("Rating")
-    plt.ylabel("Frequency")
-    plt.gca().grid(axis="y", linestyle="--")
-    plt.savefig("distribution_of_top-" + str(n) + "_highest_rated_movie_ratings.png", dpi=200)
+    # For each movie...
+    for movie_id in best_rated_movies:
 
-    # Flush the plot
-    plt.cla()
-    plt.clf()
-    plt.close()
+        # Get the title
+        movie_title = movie_data[movie_id - 1][1]
+
+        # Extract the ratings
+        movie_ratings = np.asarray([x for x in ratings if x[1] == movie_id])
+    
+        # Count the frequency of each rating
+        ratings_distribution = np.zeros(5, dtype="int")
+        for rating in movie_ratings[:, 2]:
+            ratings_distribution[rating - 1] += 1
+    
+        # Generate a histogram of the best-rated movies as a bar chart
+        plt.bar(np.arange(1, 5 + 1), ratings_distribution)
+        plt.title("Ratings for the Top-" + str(n) + " Best-Rated Movie:\n" + movie_title)
+        plt.xlabel("Rating")
+        plt.ylabel("Frequency")
+        plt.gca().grid(axis="y", linestyle="--")
+        plt.savefig(output_dir + "\\distribution_for_top-" + str(n) + "_highest_rated_movie_id-" + str(movie_id) + ".png", dpi=fig_res)
+
+        # Flush the plot
+        plt.cla()
+        plt.clf()
+        plt.close()
 
     ##############################################################
     #                                                            #
@@ -143,7 +169,7 @@ def main():
     ##############################################################
 
     # Set n for the number of genres to visualize
-    n = 3
+    n = 19
     
     # Define the lookup dictionary for the movie genres
     genre_labels = {2  : "Unknown",
@@ -165,9 +191,6 @@ def main():
                     18 : "Thriller",
                     19 : "War",
                     20 : "Western"}
-
-    # Load the movie data
-    movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
     
     # Select n genres to visualize
     genres = random.sample(range(2, 20 + 1), n)
@@ -194,7 +217,7 @@ def main():
         plt.xlabel("Rating")
         plt.ylabel("Frequency")
         plt.gca().grid(axis="y", linestyle="--")
-        plt.savefig("distribution_of_" + genre_labels[genre] + "_movie_ratings.png", dpi=200)
+        plt.savefig(output_dir + "\\distribution_of_" + genre_labels[genre] + "_movie_ratings.png", dpi=fig_res)
 
         # Flush the plot
         plt.cla()
