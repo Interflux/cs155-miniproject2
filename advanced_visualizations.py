@@ -1,6 +1,6 @@
 """
 Filename:     advanced_visualizations.py
-Version:      1.0
+Version:      1.1
 Date:         2018/2/23
 
 Description:  Generates advanced visualizations for CS 155's second miniproject.
@@ -119,7 +119,7 @@ def get_err_sgd(U, V, A, B, Y, reg=0.0, bias=False):
     return err / float(len(Y))
 
 
-def svd_surprise(k=20, bias=True, test_fraction=0.0):
+def svd_surprise(k=20, epochs=20, learning_rate=0.005, bias=True, test_fraction=0.0):
     """
     Performs SVD on the ratings data using surprise.
 
@@ -136,7 +136,7 @@ def svd_surprise(k=20, bias=True, test_fraction=0.0):
         train_set, test_set = surprise.model_selection.train_test_split(data, test_size=test_fraction)
 
     # Declare the model
-    model = surprise.SVD(n_factors=k, biased=bias)
+    model = surprise.SVD(n_factors=k, n_epochs=epochs, lr_all=learning_rate, biased=bias)
 
     # Train the model on the data
     model.fit(train_set)
@@ -231,6 +231,109 @@ def print_ratings_dataframe(df):
     """
     with pd.option_context('display.max_rows', None, 'display.max_columns', 3):
         print(df)
+
+
+def make_piazza_plots(V_proj, output_dir, n=30, movie_labels=True):
+    """
+    Generates hopefully interesting dataplots to share with the class on Piazza.
+
+    """
+    # Load the movie data
+    movie_data = np.loadtxt("data\\movies.txt", dtype="str", delimiter="\t")
+
+    # Load the movie ratings
+    ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+    # Create the output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Define the lookup dictionary for the movie genres
+    genre_labels = {2  : "Unknown",
+                    3  : "Action",
+                    4  : "Adventure",
+                    5  : "Animation",
+                    6  : "Childrens",
+                    7  : "Comedy",
+                    8  : "Crime",
+                    9  : "Documentary",
+                    10 : "Drama",
+                    11 : "Fantasy",
+                    12 : "Film-Noir",
+                    13 : "Horror",
+                    14 : "Musical",
+                    15 : "Mystery",
+                    16 : "Romance",
+                    17 : "Sci-Fi",
+                    18 : "Thriller",
+                    19 : "War",
+                    20 : "Western"}
+
+    # Select the genres to visualize
+    genres = np.arange(3, 20 + 1)
+
+    # For each movie, count the number of ratings and add up their values
+    total_ratings = {}
+    for rating in ratings:
+        if rating[1] in total_ratings:
+            total_ratings[rating[1]][0] += rating[2]
+            total_ratings[rating[1]][1] += 1
+        else:
+            total_ratings[rating[1]] = [rating[2], 1]
+            
+    # Compute the average rating for each movie
+    average_ratings = {}
+    for movie_id, rating_data in total_ratings.items():
+        average_ratings[movie_id] = rating_data[0] / rating_data[1]
+    
+    # For each genre, visualize the ratings for the top-n most-commonly-rated movies in the genre
+    for genre in genres:
+        # Identify all the movies in the genre
+        genre_movies = []
+        for movie in movie_data:
+            if movie[genre] == "1":
+                genre_movies.append(np.uint16(movie[0]))
+
+        # Identify the n movies with the greatest number of ratings
+
+        freq_dict = {}
+
+        for movie_id in genre_movies:
+            freq_dict[movie_id] = 0
+            
+        for rating in ratings:
+            if rating[1] in genre_movies:
+                freq_dict[rating[1]] += 1
+
+        id_list = sorted(freq_dict.items(), key=operator.itemgetter(1), reverse=True)
+        id_list = [x[0] for x in id_list[0:n]]
+        
+        # Plot the movies
+
+        x_list = []
+        y_list = []
+        z_list = []
+
+        for movie_id in id_list:
+            x_list.append(V_proj[0][movie_id - 1])
+            y_list.append(V_proj[1][movie_id - 1])
+            z_list.append(average_ratings[movie_id])
+
+        plt.figure(figsize=(12, 9))
+        plt.scatter(x_list, y_list, c=z_list, s=100)
+        plt.colorbar()
+        
+        if movie_labels:
+            for i, movie_id in enumerate(id_list):
+                plt.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), fontsize=4, textcoords='offset points')
+
+        plt.title("Most-Commonly-Rated \'" + genre_labels[genre] + "\' Movies")
+        plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_commonly_rated_" + genre_labels[genre] + "_movies.png", dpi=200)
+
+        # Flush the plot
+        plt.cla()
+        plt.clf()
+        plt.close()
 
 
 def make_plots(V_proj, output_dir):
@@ -493,7 +596,7 @@ def main():
     #########################################
 
     # Perform SVD using surprise
-    U, V, a, b = svd_surprise(k=20, bias=True)
+    U, V, a, b = svd_surprise(k=20, epochs=100, learning_rate=0.001, bias=True)
 
     # Transpose U and V
     U = np.matrix.transpose(U)
@@ -522,7 +625,8 @@ def main():
     #                        #
     ##########################
 
-    make_plots(V_proj, "svd_surprise")
+    # make_plots(V_proj, "svd_surprise")
+    make_piazza_plots(V_proj, "piazza_plots\\surprise_k20")
 
     #################################
     #                               #
@@ -530,7 +634,9 @@ def main():
     #                               #
     #################################
 
-    """ TensorFlow... """
+    """
+    
+    ### TensorFlow... ###
 
     # Perform SVD using Hamed's TensorFlow implementation
     U, V = svd_hamed(k=20)
@@ -552,7 +658,7 @@ def main():
     # Plot the results
     make_plots(V_proj, "svd_tensorflow")
 
-    """ Our own SGD algorithm... """
+    ### Our own SGD algorithm... ###
 
     # Perform SVD using SGD
     U, V = svd_sgd(k=20, reg=10**-1, bias=True)
@@ -574,7 +680,7 @@ def main():
     # Plot the results
     make_plots(V_proj, "svd_sgd")
 
-    """ Our own SGD algorithm, without bias... """
+    ### Our own SGD algorithm, without bias... ###
 
     # Perform SVD using SGD
     U, V = svd_sgd(k=20, reg=10**-1, bias=False)
@@ -595,6 +701,8 @@ def main():
 
     # Plot the results
     make_plots(V_proj, "svd_sgd_nobias")
+
+    """
 
 
 if __name__ == "__main__":
