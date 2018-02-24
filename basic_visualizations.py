@@ -79,32 +79,26 @@ def main():
     # Identify the n movies with the greatest number of ratings
     most_common_movies = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
 
-    # For each movie...
-    for movie_id in most_common_movies:
+    # Extract their ratings
+    most_common_ratings = np.asarray([x for x in ratings if x[1] in most_common_movies])
+    
+    # Count the frequency of each rating
+    most_common_ratings_distribution = np.zeros(5, dtype="int")
+    for rating in most_common_ratings[:, 2]:
+        most_common_ratings_distribution[rating - 1] += 1
+    
+    # Generate a histogram of the most-commonly-rated movies as a bar chart
+    plt.bar(np.arange(1, 5 + 1), most_common_ratings_distribution)
+    plt.title("Distribution of Ratings for the " + str(n) + " Most-Commonly-Rated Movies")
+    plt.xlabel("Rating")
+    plt.ylabel("Frequency")
+    plt.gca().grid(axis="y", linestyle="--")
+    plt.savefig(outputdir + "\\distribution_of_top-" + str(n) + "_most_commonly_rated_movie_ratings.png", dpi=200)
 
-        # Get the title
-        movie_title = movie_data[movie_id - 1][1]
-
-        # Extract the ratings
-        movie_ratings = np.asarray([x for x in ratings if x[1] == movie_id])
-        
-        # Count the frequency of each rating
-        ratings_distribution = np.zeros(5, dtype="int")
-        for rating in movie_ratings[:, 2]:
-            ratings_distribution[rating - 1] += 1
-        
-        # Generate a histogram for the current most-commonly-rated movie as a bar chart
-        plt.bar(np.arange(1, 5 + 1), ratings_distribution)
-        plt.title("Ratings for the Top-" + str(n) + " Most-Commonly-Rated Movie:\n" + movie_title)
-        plt.xlabel("Rating")
-        plt.ylabel("Frequency")
-        plt.gca().grid(axis="y", linestyle="--")
-        plt.savefig(output_dir + "\\distribution_for_top-" + str(n) + "_most_commonly_rated_movie_id-" + str(movie_id) + ".png", dpi=fig_res)
-
-        # Flush the plot
-        plt.cla()
-        plt.clf()
-        plt.close()
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
 
     ##########################################
     #                                        #
@@ -133,34 +127,28 @@ def main():
     average_ratings = np.asarray(sorted(average_ratings, key = lambda x: x[1], reverse=True))
     
     # Identify the n best-rated movies
-    best_rated_movies = np.asarray(average_ratings[:n, 0], dtype="int")
+    best_rated_movies = average_ratings[:10, 0]
 
-    # For each movie...
-    for movie_id in best_rated_movies:
-
-        # Get the title
-        movie_title = movie_data[movie_id - 1][1]
-
-        # Extract the ratings
-        movie_ratings = np.asarray([x for x in ratings if x[1] == movie_id])
+    # Extract their ratings
+    best_ratings = np.asarray([x for x in ratings if x[1] in best_rated_movies])
     
-        # Count the frequency of each rating
-        ratings_distribution = np.zeros(5, dtype="int")
-        for rating in movie_ratings[:, 2]:
-            ratings_distribution[rating - 1] += 1
+    # Count the frequency of each rating
+    best_ratings_distribution = np.zeros(5, dtype="int")
+    for rating in best_ratings[:, 2]:
+        best_ratings_distribution[rating - 1] += 1
     
-        # Generate a histogram of the best-rated movies as a bar chart
-        plt.bar(np.arange(1, 5 + 1), ratings_distribution)
-        plt.title("Ratings for the Top-" + str(n) + " Best-Rated Movie:\n" + movie_title)
-        plt.xlabel("Rating")
-        plt.ylabel("Frequency")
-        plt.gca().grid(axis="y", linestyle="--")
-        plt.savefig(output_dir + "\\distribution_for_top-" + str(n) + "_highest_rated_movie_id-" + str(movie_id) + ".png", dpi=fig_res)
+    # Generate a histogram of the best-rated movies as a bar chart
+    plt.bar(np.arange(1, 5 + 1), best_ratings_distribution)
+    plt.title("Distribution of Ratings for the " + str(n) + " Best-Rated Movies")
+    plt.xlabel("Rating")
+    plt.ylabel("Frequency")
+    plt.gca().grid(axis="y", linestyle="--")
+    plt.savefig(outputdir + "\\distribution_of_top-" + str(n) + "_highest_rated_movie_ratings.png", dpi=200)
 
-        # Flush the plot
-        plt.cla()
-        plt.clf()
-        plt.close()
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
 
     ##############################################################
     #                                                            #
