@@ -11,13 +11,10 @@ Organization:  California Institute of Technology
 """
 
 # Import package components
-from scipy import stats, integrate
 from collections import Counter
 
 # Import packages as aliases
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 import numpy as np
 
 # Import packages
@@ -34,7 +31,7 @@ def main():
     ratings = np.loadtxt("data\\data.txt", dtype="int")
 
     # Set the resolution of each figure
-    fig_res = 200
+    fig_res = 100
 
     # Set the output directory
     output_dir = "basic"

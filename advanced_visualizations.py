@@ -233,6 +233,45 @@ def print_ratings_dataframe(df):
         print(df)
 
 
+def make_user_plot(U_proj, output_dir):
+    """
+    Generates a plot of users colored by that user's average rating on all movies.
+
+    """
+    # Load the movie ratings
+    ratings = np.loadtxt("data\\data.txt", dtype="int")
+
+    # Create the output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    # For each user, count the number of ratings and add up their values
+    total_user_ratings = {}
+    for rating in ratings:
+        if rating[0] in total_user_ratings:
+            total_user_ratings[rating[0]][0] += rating[2]
+            total_user_ratings[rating[0]][1] += 1
+        else:
+            total_user_ratings[rating[0]] = [rating[2], 1]
+            
+    # Compute the average rating for each user
+    average_user_ratings = []
+    for i in range(len(total_user_ratings)):
+        average_user_ratings.append(total_user_ratings[i+1][0] / total_user_ratings[i+1][1])
+        
+    #plt.figure(figsize=(12, 9))
+    plt.scatter(U_proj[0], U_proj[1], c=average_user_ratings, s=100)
+    plt.colorbar()
+        
+    plt.title("User Latent-Factors and Ratings")
+    plt.savefig(output_dir + "\\ratings_user.png", dpi=100)
+
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
+
+
 def make_piazza_plots(V_proj, output_dir, n=30, movie_labels=True):
     """
     Generates hopefully interesting dataplots to share with the class on Piazza.
@@ -319,7 +358,7 @@ def make_piazza_plots(V_proj, output_dir, n=30, movie_labels=True):
             y_list.append(V_proj[1][movie_id - 1])
             z_list.append(average_ratings[movie_id])
 
-        plt.figure(figsize=(12, 9))
+        #plt.figure(figsize=(12, 9))
         plt.scatter(x_list, y_list, c=z_list, s=100)
         plt.colorbar()
         
@@ -347,9 +386,64 @@ def make_plots(V_proj, output_dir):
     # Load the movie ratings
     ratings = np.loadtxt("data\\data.txt", dtype="int")
 
-    # Create the output directory if it does not exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    output_dir_any = output_dir + "\\any"
+    output_dir_popular = output_dir + "\\popular"
+    output_dir_best = output_dir + "\\best"
+    output_dir_genre = output_dir + "\\genre"
+    
+    # Create the output directories if they don't not exist
+    if not os.path.exists(output_dir_any):
+        os.makedirs(output_dir_any)
+        
+    if not os.path.exists(output_dir_popular):
+        os.makedirs(output_dir_popular)
+        
+    if not os.path.exists(output_dir_best):
+        os.makedirs(output_dir_best)
+        
+    if not os.path.exists(output_dir_genre):
+        os.makedirs(output_dir_genre)
+        
+    #################################    
+    #                               #
+    # 1. Ratings of any ten movies. #
+    #                               #
+    #################################
+    
+    id_list = [1,    # Toy Story
+               82,   # Jurassic Park
+               94,   # Home Alone
+               135,  # 2001: A Space Odyssey
+               143,  # The Sound of Music
+               181,  # Return of the Jedi
+               199,  # The Bridge on the River Kwai
+               225,  # 101 Dalmatians
+               313,  # Titanic
+               755   # Jumanji
+               ]
+    
+    # Plot the movies
+    x_list = []
+    y_list = []
+    
+    for movie_id in id_list:
+        x_list.append(V_proj[0][movie_id - 1])
+        y_list.append(V_proj[1][movie_id - 1])
+
+    #fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots()
+    ax.scatter(x_list, y_list)
+
+    for i, movie_id in enumerate(id_list):
+        ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
+
+    plt.title("Any 10 Movies")
+    plt.savefig(output_dir_any + "\\scatter_any_10_movies.png", dpi=100)
+
+    # Flush the plot
+    plt.cla()
+    plt.clf()
+    plt.close()
         
     ##################################################
     #                                                #
@@ -364,7 +458,6 @@ def make_plots(V_proj, output_dir):
     id_list = [list(x)[0] for x in Counter(ratings[:, 1]).most_common(n)]
 
     # Plot the movies
-
     x_list = []
     y_list = []
 
@@ -372,14 +465,15 @@ def make_plots(V_proj, output_dir):
         x_list.append(V_proj[0][movie_id - 1])
         y_list.append(V_proj[1][movie_id - 1])
 
-    fig, ax = plt.subplots(figsize=(12, 9))
+    #fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots()
     ax.scatter(x_list, y_list)
 
     for i, movie_id in enumerate(id_list):
         ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
 
     plt.title("Top-" + str(n) + " Most-Commonly-Rated Movies")
-    plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_commonly_rated_movies.png", dpi=80)
+    plt.savefig(output_dir_popular + "\\scatter_top-" + str(n) + "_most_commonly_rated_movies.png", dpi=100)
 
     # Flush the plot
     plt.cla()
@@ -416,7 +510,6 @@ def make_plots(V_proj, output_dir):
     id_list = np.asarray(average_ratings[:n, 0], dtype="int")
 
     # Plot the movies
-
     x_list = []
     y_list = []
 
@@ -424,25 +517,26 @@ def make_plots(V_proj, output_dir):
         x_list.append(V_proj[0][movie_id - 1])
         y_list.append(V_proj[1][movie_id - 1])
 
-    fig, ax = plt.subplots(figsize=(12, 9))
+    #fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots()
     ax.scatter(x_list, y_list)
 
     for i, movie_id in enumerate(id_list):
         ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
 
     plt.title("Top-" + str(n) + " Most-Highly-Rated Movies")
-    plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_highly_rated_movies.png", dpi=80)
+    plt.savefig(output_dir_best + "\\scatter_top-" + str(n) + "_most_highly_rated_movies.png", dpi=100)
 
     # Flush the plot
     plt.cla()
     plt.clf()
     plt.close()
 
-    #####################################################
-    #                                                   #  
-    # All ratings of 10 movies from a particular genre. #
-    #                                                   #
-    #####################################################
+    ########################################################
+    #                                                      #  
+    # 4. All ratings of 10 movies from a particular genre. #
+    #                                                      #
+    ########################################################
 
     # Set k for the number of genres to visualize
     k = 19
@@ -483,7 +577,6 @@ def make_plots(V_proj, output_dir):
                 genre_movies.append(np.uint16(movie[0]))
 
         # Identify the n movies with the greatest number of ratings
-
         freq_dict = {}
 
         for movie_id in genre_movies:
@@ -497,7 +590,6 @@ def make_plots(V_proj, output_dir):
         id_list = [x[0] for x in id_list[0:n]]
         
         # Plot the movies
-
         x_list = []
         y_list = []
 
@@ -505,14 +597,15 @@ def make_plots(V_proj, output_dir):
             x_list.append(V_proj[0][movie_id - 1])
             y_list.append(V_proj[1][movie_id - 1])
 
-        fig, ax = plt.subplots(figsize=(12, 9))
+        #fig, ax = plt.subplots(figsize=(12, 9))
+        fig, ax = plt.subplots()
         ax.scatter(x_list, y_list)
 
         for i, movie_id in enumerate(id_list):
             ax.annotate(movie_data[movie_id - 1][1], xy=(x_list[i], y_list[i]), xycoords='data', xytext=(5, 5), textcoords='offset points')
 
         plt.title("Top-" + str(n) + " Most-Commonly-Rated \'" + genre_labels[genre] + "\' Movies")
-        plt.savefig(output_dir + "\\scatter_top-" + str(n) + "_most_commonly_rated_" + genre_labels[genre] + "_movies.png", dpi=80)
+        plt.savefig(output_dir_genre + "\\scatter_top-" + str(n) + "_most_commonly_rated_" + genre_labels[genre] + "_movies.png", dpi=100)
 
         # Flush the plot
         plt.cla()
@@ -625,16 +718,14 @@ def main():
     #                        #
     ##########################
 
-    # make_plots(V_proj, "svd_surprise")
-    make_piazza_plots(V_proj, "piazza_plots\\surprise_k20")
+    make_plots(V_proj, "svd_surprise")
+    # make_piazza_plots(V_proj, "piazza_plots\\surprise_k20")
 
     #################################
     #                               #
     # Repeat for other SGD methods. #
     #                               #
     #################################
-
-    """
     
     ### TensorFlow... ###
 
@@ -658,6 +749,7 @@ def main():
     # Plot the results
     make_plots(V_proj, "svd_tensorflow")
 
+
     ### Our own SGD algorithm... ###
 
     # Perform SVD using SGD
@@ -680,6 +772,7 @@ def main():
     # Plot the results
     make_plots(V_proj, "svd_sgd")
 
+
     ### Our own SGD algorithm, without bias... ###
 
     # Perform SVD using SGD
@@ -701,8 +794,7 @@ def main():
 
     # Plot the results
     make_plots(V_proj, "svd_sgd_nobias")
-
-    """
+    make_user_plot(U_proj, "piazza_plots\\users")
 
 
 if __name__ == "__main__":
